@@ -26,10 +26,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -38,7 +38,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
@@ -71,9 +70,10 @@ enum class SunflowerPage(
 fun HomeScreen(
     modifier: Modifier = Modifier,
     onPlantClick: (Plant) -> Unit = {},
-    viewModel: PlantListViewModel = hiltViewModel()
+    viewModel: PlantListViewModel = hiltViewModel(),
+    pages: Array<SunflowerPage> = SunflowerPage.values()
 ) {
-    val pagerState = rememberPagerState()
+    val pagerState = rememberPagerState(pageCount = { pages.size })
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
 
     Scaffold(
@@ -85,11 +85,12 @@ fun HomeScreen(
                 scrollBehavior = scrollBehavior
             )
         }
-    ) {
+    ) { contentPadding ->
         HomePagerScreen(
             onPlantClick = onPlantClick,
             pagerState = pagerState,
-            modifier = Modifier.padding(it)
+            pages = pages,
+            Modifier.padding(top = contentPadding.calculateTopPadding())
         )
     }
 }
@@ -99,12 +100,9 @@ fun HomeScreen(
 fun HomePagerScreen(
     onPlantClick: (Plant) -> Unit,
     pagerState: PagerState,
+    pages: Array<SunflowerPage>,
     modifier: Modifier = Modifier,
-    pages: Array<SunflowerPage> = SunflowerPage.values()
 ) {
-    // Use Modifier.nestedScroll + rememberNestedScrollInteropConnection() here so that this
-    // composable participates in the nested scroll hierarchy so that HomeScreen can be used in
-    // use cases like a collapsing toolbar
     Column(modifier) {
         val coroutineScope = rememberCoroutineScope()
 
@@ -132,7 +130,6 @@ fun HomePagerScreen(
         // Pages
         HorizontalPager(
             modifier = Modifier.background(MaterialTheme.colorScheme.background),
-            pageCount = pages.size,
             state = pagerState,
             verticalAlignment = Alignment.Top
         ) { index ->
@@ -169,7 +166,7 @@ private fun HomeTopAppBar(
     scrollBehavior: TopAppBarScrollBehavior,
     modifier: Modifier = Modifier
 ) {
-    TopAppBar(
+    CenterAlignedTopAppBar(
         title = {
             Row(
                 Modifier.fillMaxWidth(),
@@ -181,7 +178,7 @@ private fun HomeTopAppBar(
                 )
             }
         },
-        modifier = modifier.statusBarsPadding(),
+        modifier = modifier,
         actions = {
             if (pagerState.currentPage == SunflowerPage.PLANT_LIST.ordinal) {
                 IconButton(onClick = onFilterClick) {
@@ -203,9 +200,11 @@ private fun HomeTopAppBar(
 @Composable
 private fun HomeScreenPreview() {
     SunflowerTheme {
+        val pages = SunflowerPage.values()
         HomePagerScreen(
             onPlantClick = {},
-            pagerState = PagerState(),
+            pagerState = rememberPagerState(pageCount = { pages.size }),
+            pages = pages
         )
     }
 }
